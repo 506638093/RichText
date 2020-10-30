@@ -13,6 +13,16 @@ using XUnityCore;
 
 namespace UnityEngine.UI
 {
+    [System.Serializable]
+    public enum ERichTextMode
+    {
+        ERTM_UI,
+        ERTM_3DText,
+        ERTM_MergeText,
+    }
+
+
+    [XLua.LuaCallCSharp]
     [ExecuteInEditMode]
     public class RichText : Text
     {
@@ -52,23 +62,45 @@ namespace UnityEngine.UI
         public Texture2D m_AtlasTexture;
 
         [SerializeField]
-        public bool m_UiMode = false;
+        private string m_AtlasTexturePath;
+
+        public string AtlasTexturePath
+        {
+            get
+            {
+                return m_AtlasTexturePath;
+            }
+            set
+            {
+                m_AtlasTexturePath = value;
+            }
+        }
+
+        [SerializeField]
+        public ERichTextMode m_UiMode = ERichTextMode.ERTM_MergeText;
 
         [System.NonSerialized]
         private MeshRenderer m_meshRender;
         [System.NonSerialized]
         private MeshFilter m_meshFilter;
         [System.NonSerialized]
-        private Mesh m_mesh;
+        private Mesh m_mesh;        
 
         private string m_parseText;
         private readonly UIVertex[] m_tempVerts = new UIVertex[4];
         private readonly List<RichTextSprite> m_spriteList = new List<RichTextSprite>();
         [System.NonSerialized]
         private static readonly VertexHelper s_VertexHelper = new VertexHelper();
+
+        internal static readonly HideFlags MeshHideflags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor | HideFlags.HideInInspector;
         #endregion //member
 
         #region public function
+        public Mesh Mesh()
+        {
+            return m_mesh;
+        }
+
         public void SetSpriteFillAmount(string name, float amount)
         {
             for (int i = 0; i < m_spriteList.Count; ++i)
@@ -86,43 +118,73 @@ namespace UnityEngine.UI
 
         protected override void UpdateGeometry()
         {
-            if (m_UiMode)
+            if (m_UiMode == ERichTextMode.ERTM_UI)
             {
                 base.UpdateGeometry();
             }
-            else
+            else if (m_UiMode == ERichTextMode.ERTM_3DText)
             {
                 if (m_meshRender == null)
                 {
                     m_meshRender = gameObject.GetOrAddComponent<MeshRenderer>();
                     m_meshRender.sharedMaterial = material;
+                    m_meshRender.hideFlags = MeshHideflags;
 
                     m_meshFilter = gameObject.GetOrAddComponent<MeshFilter>();
+                    m_meshFilter.hideFlags = MeshHideflags;
 
                     m_mesh = new Mesh();
+                    m_mesh.MarkDynamic();
+                    m_mesh.hideFlags = MeshHideflags;
                 }
 
                 DoMeshGeneration3D();
+            }
+            else if (m_UiMode == ERichTextMode.ERTM_MergeText)
+            {
+                if (m_mesh == null)
+                {
+                    m_mesh = new Mesh();
+                    m_mesh.MarkDynamic();
+                    m_mesh.hideFlags = MeshHideflags;
+                }
+                DoMeshGeneration3D();
+
+                var render = transform.GetComponentInParent<RichTextRender>();
+                if (render)
+                {
+                    render.MarkDirty();
+                }
             }
         }
 
         private void DoMeshGeneration3D()
         {
             if (rectTransform != null && rectTransform.rect.width >= 0 && rectTransform.rect.height >= 0)
+            {
                 OnPopulateMesh(s_VertexHelper);
+            }
             else
+            {
                 s_VertexHelper.Clear(); // clear the vertex helper so invalid graphics dont draw.
+            }
 
             var components = ListPool<Component>.Get();
             GetComponents(typeof(IMeshModifier), components);
 
             for (var i = 0; i < components.Count; i++)
+            {
                 ((IMeshModifier)components[i]).ModifyMesh(s_VertexHelper);
+            }
 
             ListPool<Component>.Release(components);
 
             s_VertexHelper.FillMesh(m_mesh);
-            m_meshFilter.sharedMesh = m_mesh;
+
+            if (m_meshFilter)
+            {
+                m_meshFilter.sharedMesh = m_mesh;
+            }
         }
 
         protected override void OnEnable()
@@ -131,8 +193,14 @@ namespace UnityEngine.UI
 
             parseText();
 
-            m_Material.SetTexture("_MainTex", mainTexture);
-            m_Material.SetTexture("_SpriteTex", m_AtlasTexture);
+            if (mainTexture)
+            {
+                m_Material.SetTexture("_MainTex", mainTexture);
+            }
+            if (m_AtlasTexture)
+            {
+                m_Material.SetTexture("_SpriteTex", m_AtlasTexture);
+            }
 
             SetVerticesDirty();
 
@@ -141,6 +209,15 @@ namespace UnityEngine.UI
 
         protected override void OnDisable()
         {
+            if (m_UiMode == ERichTextMode.ERTM_MergeText)
+            {
+                var render = transform.GetComponentInParent<RichTextRender>();
+                if (render)
+                {
+                    render.MarkDirty();
+                }
+            }
+
             base.OnDisable();
         }
 
@@ -205,7 +282,7 @@ namespace UnityEngine.UI
             }
         }
 
-        private void handleSpriteTag(VertexHelper toFill)
+        private void handleSprite(VertexHelper toFill)
         {
             var count = m_spriteList.Count;
             for (int i = 0; i < count; i++)
@@ -218,11 +295,54 @@ namespace UnityEngine.UI
                     continue;
                 }
 
-                setSpriteVertex_FillMethod_None(toFill, richSprite, sprite);
+                if (richSprite.GetType() == Image.Type.Simple)
+                {
+                    GenerateSimpleSprite(toFill, richSprite, sprite);
+                }
+                else if (richSprite.GetType() == Image.Type.Sliced)
+                {
+                    GenerateSlicedSprite(toFill, richSprite, sprite);
+                }
+                
             }
         }
 
-        private void setSpriteVertex_FillMethod_None(VertexHelper toFill, RichTextSprite richSprite, Sprite sprite)
+        static readonly Vector2[] s_VertScratch = new Vector2[4];
+        static readonly Vector2[] s_UVScratch = new Vector2[4];
+
+        private Vector4 GetAdjustedBorders(Vector4 border, Rect adjustedRect)
+        {
+            Rect originalRect = rectTransform.rect;
+
+            for (int axis = 0; axis <= 1; axis++)
+            {
+                float borderScaleRatio;
+
+                // The adjusted rect (adjusted for pixel correctness)
+                // may be slightly larger than the original rect.
+                // Adjust the border to match the adjustedRect to avoid
+                // small gaps between borders (case 833201).
+                if (originalRect.size[axis] != 0)
+                {
+                    borderScaleRatio = adjustedRect.size[axis] / originalRect.size[axis];
+                    border[axis] *= borderScaleRatio;
+                    border[axis + 2] *= borderScaleRatio;
+                }
+
+                // If the rect is smaller than the combined borders, then there's not room for the borders at their normal size.
+                // In order to avoid artefacts with overlapping borders, we scale the borders down to fit.
+                float combinedBorders = border[axis] + border[axis + 2];
+                if (adjustedRect.size[axis] < combinedBorders && combinedBorders != 0)
+                {
+                    borderScaleRatio = adjustedRect.size[axis] / combinedBorders;
+                    border[axis] *= borderScaleRatio;
+                    border[axis + 2] *= borderScaleRatio;
+                }
+            }
+            return border;
+        }
+
+        private void GenerateSlicedSprite(VertexHelper toFill, RichTextSprite richSprite, Sprite sprite)
         {
             UIVertex v = UIVertex.simpleVert;
             var vertexIndex = richSprite.GetVertexIndex() * 4;
@@ -234,6 +354,71 @@ namespace UnityEngine.UI
 
             toFill.PopulateUIVertex(ref v, fetchIndex);
             Vector3 textPos = v.position;
+
+            var tagSize = richSprite.GetSize();
+
+            Vector4 border = sprite.border;
+            Vector4 adjustedBorders = border;
+
+            Vector4 outer, inner;
+
+            outer = Sprites.DataUtility.GetOuterUV(sprite);
+            inner = Sprites.DataUtility.GetInnerUV(sprite);
+
+            s_VertScratch[0] = new Vector2(0, 0);
+            s_VertScratch[3] = new Vector2(tagSize.x, tagSize.y);
+
+            s_VertScratch[1].x = adjustedBorders.x;
+            s_VertScratch[1].y = adjustedBorders.y;
+
+            s_VertScratch[2].x = tagSize.x - adjustedBorders.z;
+            s_VertScratch[2].y = tagSize.y - adjustedBorders.w;
+
+            for (int i = 0; i < 4; ++i)
+            {
+                s_VertScratch[i].x += textPos.x;
+                s_VertScratch[i].y += textPos.y;
+            }
+
+            s_UVScratch[0] = new Vector2(outer.x, outer.y);
+            s_UVScratch[1] = new Vector2(inner.x, inner.y);
+            s_UVScratch[2] = new Vector2(inner.z, inner.w);
+            s_UVScratch[3] = new Vector2(outer.z, outer.w);
+
+            int vertexCount = 0;
+            for (int x = 0; x < 3; ++x)
+            {
+                int x2 = x + 1;
+
+                for (int y = 0; y < 3; ++y)
+                {
+                    int y2 = y + 1;
+
+                    addSpriteQuad(toFill,
+                        vertexIndex + vertexCount,
+                        new Vector2(s_VertScratch[x].x, s_VertScratch[y].y),
+                        new Vector2(s_VertScratch[x2].x, s_VertScratch[y2].y),
+                        new Vector2(s_UVScratch[x].x, s_UVScratch[y].y),
+                        new Vector2(s_UVScratch[x2].x, s_UVScratch[y2].y));
+
+                    vertexCount += 4;
+                }
+            }
+        }
+
+        private void GenerateSimpleSprite(VertexHelper toFill, RichTextSprite richSprite, Sprite sprite)
+        {
+            UIVertex v = UIVertex.simpleVert;
+            var vertexIndex = richSprite.GetVertexIndex() * 4;
+            var fetchIndex = vertexIndex + 3;
+            if (fetchIndex >= toFill.currentVertCount)
+            {
+                return;
+            }
+
+            toFill.PopulateUIVertex(ref v, fetchIndex);
+            Vector3 textPos = v.position;
+
             var tagSize = richSprite.GetSize();
 
             var texture = sprite.texture;
@@ -273,6 +458,14 @@ namespace UnityEngine.UI
             v.uv0 = uv0;
             v.uv1 = new Vector2(0, 1.0f);
             toFill.SetUIVertex(v, vertexIndex);
+        }
+
+        private void addSpriteQuad(VertexHelper toFill, int startIndex, Vector2 posMin, Vector2 posMax, Vector2 uvMin, Vector2 uvMax)
+        {
+           setSpriteVertex(toFill, startIndex,      new Vector3(posMin.x, posMin.y, 0), new Vector2(uvMin.x, uvMin.y));
+           setSpriteVertex(toFill, startIndex + 1,  new Vector3(posMin.x, posMax.y, 0), new Vector2(uvMin.x, uvMax.y));
+           setSpriteVertex(toFill, startIndex + 2,  new Vector3(posMax.x, posMax.y, 0), new Vector2(uvMax.x, uvMax.y));
+           setSpriteVertex(toFill, startIndex + 3,  new Vector3(posMax.x, posMin.y, 0), new Vector2(uvMax.x, uvMin.y));
         }
 
         protected override void OnPopulateMesh(VertexHelper toFill)
@@ -321,6 +514,7 @@ namespace UnityEngine.UI
                     m_tempVerts[tempVertsIndex].position.x += roundingOffset.x;
                     m_tempVerts[tempVertsIndex].position.y += roundingOffset.y;
                     m_tempVerts[tempVertsIndex].uv1 = new Vector2(1.0f, 0);
+                    m_tempVerts[tempVertsIndex].color = this.color;
 
                     if (tempVertsIndex == 3)
                     {
@@ -336,6 +530,7 @@ namespace UnityEngine.UI
                     m_tempVerts[tempVertsIndex] = verts[i];
                     m_tempVerts[tempVertsIndex].position *= unitsPerPixel;
                     m_tempVerts[tempVertsIndex].uv1 = new Vector2(1.0f, 0);
+                    m_tempVerts[tempVertsIndex].color = this.color;
 
                     if (tempVertsIndex == 3)
                     {
@@ -344,7 +539,7 @@ namespace UnityEngine.UI
                 }
             }
 
-            handleSpriteTag(toFill);
+            handleSprite(toFill);
             m_DisableFontTextureRebuiltCallback = false;
         }
 

@@ -21,6 +21,7 @@ namespace UnityEngine.UI
         private Vector2 m_size;
         private Sprite m_sprite;
         private float m_fillAmount = 1.0f;
+        private Image.Type m_type = Image.Type.Simple;
 
         public RichTextSprite(RichText richText)
         {
@@ -71,12 +72,15 @@ namespace UnityEngine.UI
         public void Reset()
         {
             SetName(null);
+            m_type = Image.Type.Simple;
         }
 
         private void setSprite(string path)
         {
-            ResourceManager.Instance.LoadSprite(path, (sprite, abPath) => {
+            ResourceManager.Instance.LoadSprite(m_richText.AtlasTexturePath + path, (sprite, abPath) => {
                 m_sprite = sprite;
+                m_size.x = sprite.rect.width;
+                m_size.y = sprite.rect.height;
             }, true);
         }
 
@@ -95,28 +99,40 @@ namespace UnityEngine.UI
             return m_size;
         }
 
+        public Image.Type GetType()
+        {
+            return m_type;
+        }
+
         private void checkSetValue(Match match, string key, string val)
         {
-            if (key == "name")
+            if (key == "n")
             {
                 SetName(val);
                 m_vertexIndex = match.Index;
             }
-            else if (key == "src")
+            else if (key == "s")
             {
                 setSprite(val);
             }
-            else if (key == "width")
+            else if (key == "w")
             {
                 float width;
                 float.TryParse(val, out width);
                 m_size.x = width;
             }
-            else if (key == "height")
+            else if (key == "h")
             {
                 float height;
                 float.TryParse(val, out height);
                 m_size.y = height;
+            }
+            else if (key == "t")
+            {
+                if (val == "s")
+                {
+                    m_type = Image.Type.Sliced;
+                }
             }
         }
 
