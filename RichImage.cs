@@ -128,6 +128,7 @@ namespace UnityEngine.UI
             v.position = position;
             v.uv0 = uv0;
             v.uv1 = new Vector2(0, 1.0f);
+            v.color = this.color.linear;
         }
 
         private void GenerateSimpleSprite(VertexHelper toFill)

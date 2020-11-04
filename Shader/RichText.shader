@@ -63,7 +63,7 @@ Shader "UI/RichText"
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv0 = TRANSFORM_TEX(v.uv0, _MainTex);
                 o.uv1 = TRANSFORM_TEX(v.uv1, _SpriteTex);
-                o.color = v.color * _Color;
+                o.color = v.color;// *_Color;
 
                 return o;
             }
@@ -72,7 +72,7 @@ Shader "UI/RichText"
             {
                 half4 result = i.color * i.uv1.x;
                 result.a *= (tex2D(_MainTex, i.uv0)).a;
-                result += i.uv1.y * tex2D(_SpriteTex, i.uv0);
+                result += i.uv1.y * i.color * tex2D(_SpriteTex, i.uv0);
 
                 return result;
             }
