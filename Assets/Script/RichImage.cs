@@ -7,20 +7,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using UnityEditor.Graphing;
 using UnityEngine;
 using UnityEngine.U2D;
-using XUnityCore;
+using HuaHua;
 
 namespace UnityEngine.UI
 {
-    [XLua.LuaCallCSharp]
     [ExecuteInEditMode]
-    public class RichImage : Image, IAwakeRef
+    public class RichImage : Image
     {
-        private string mSpritePath;
-        public string SpritePath => mSpritePath;
-
         [System.NonSerialized]
         private static readonly VertexHelper s_VertexHelper = new VertexHelper();
 
@@ -32,46 +27,11 @@ namespace UnityEngine.UI
         [System.NonSerialized]
         private Mesh m_mesh;
 
-        private bool mIsAwake;
-
         private bool mNativeSize;
-
-        private ResourceRef spriteRef;
 
         public Mesh Mesh()
         {
             return m_mesh;
-        }
-
-        public void SetSprite(string path, bool nativeSize = false, Action<RichImage, string> action = null)
-        {
-            mSpritePath = path;
-            mNativeSize = nativeSize;
-            if (string.IsNullOrEmpty(path))
-            {
-                sprite = null;
-                ResourceManager.Instance.AddRefFile<SpriteRef>(gameObject, path, null);
-            }
-            else
-            {
-                ResourceManager.Instance.LoadSprite(path, (sprite, abPath) =>
-                {
-                    if (this && mIsAwake && path == mSpritePath)
-                    {
-                        this.sprite = sprite;
-                        var sr = ResourceManager.Instance.AddRefFile<SpriteRef>(gameObject, abPath, sprite.name);
-                        if (!gameObject.activeInHierarchy)
-                        {
-                            sr.FallSleep(this);
-                        }
-                        if (mNativeSize)
-                        {
-                            SetNativeSize();
-                        }
-                        action?.Invoke(this, abPath);
-                    }
-                });
-            }
         }
 
         protected override void UpdateGeometry()
@@ -304,26 +264,5 @@ namespace UnityEngine.UI
                 }
             }
         }
-
-        protected override void Awake()
-        {
-            mIsAwake = true;
-            if (!string.IsNullOrEmpty(mSpritePath))
-            {
-                SetSprite(mSpritePath, mNativeSize);
-            }
-            base.Awake();
-        }
-
-        public void AddSleepy(ResourceRef rr)
-        {
-            spriteRef = rr;
-        }
-
-        public void RemoveSleepy(ResourceRef rr)
-        {
-            spriteRef = null;
-        }
-
     }
 }

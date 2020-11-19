@@ -6,14 +6,12 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using UnityEditor.Graphing;
 using UnityEngine;
 using UnityEngine.U2D;
-using XUnityCore;
+using HuaHua;
 
 namespace UnityEngine.UI
 {
-    [XLua.LuaCallCSharp]
     [ExecuteInEditMode]
     public class RichTextRender : MonoBehaviour
     {

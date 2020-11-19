@@ -8,8 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using XUnityCore;
-
 
 namespace UnityEngine.UI
 {
@@ -64,6 +62,11 @@ namespace UnityEngine.UI
             m_name = name;
         }
 
+        public void SetSprite(string path)
+        {
+            //TODO 需要自己根据实际情况实现加载
+        }
+
         public string GetName()
         {
             return m_name;
@@ -73,15 +76,6 @@ namespace UnityEngine.UI
         {
             SetName(null);
             m_type = Image.Type.Simple;
-        }
-
-        private void setSprite(string path)
-        {
-            ResourceManager.Instance.LoadSprite(m_richText.AtlasTexturePath + path, (sprite, abPath) => {
-                m_sprite = sprite;
-                m_size.x = sprite.rect.width;
-                m_size.y = sprite.rect.height;
-            }, true);
         }
 
         public Sprite GetSprite()
@@ -99,7 +93,7 @@ namespace UnityEngine.UI
             return m_size;
         }
 
-        public Image.Type GetType()
+        public Image.Type GetImageType()
         {
             return m_type;
         }
@@ -113,7 +107,7 @@ namespace UnityEngine.UI
             }
             else if (key == "s")
             {
-                setSprite(val);
+                SetSprite(val);
             }
             else if (key == "w")
             {

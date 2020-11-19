@@ -6,10 +6,9 @@
 
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using UnityEditor.Graphing;
 using UnityEngine;
 using UnityEngine.U2D;
-using XUnityCore;
+using HuaHua;
 
 namespace UnityEngine.UI
 {
@@ -21,8 +20,6 @@ namespace UnityEngine.UI
         ERTM_MergeText,
     }
 
-
-    [XLua.LuaCallCSharp]
     [ExecuteInEditMode]
     public class RichText : Text
     {
@@ -295,11 +292,11 @@ namespace UnityEngine.UI
                     continue;
                 }
 
-                if (richSprite.GetType() == Image.Type.Simple)
+                if (richSprite.GetImageType() == Image.Type.Simple)
                 {
                     GenerateSimpleSprite(toFill, richSprite, sprite);
                 }
-                else if (richSprite.GetType() == Image.Type.Sliced)
+                else if (richSprite.GetImageType() == Image.Type.Sliced)
                 {
                     GenerateSlicedSprite(toFill, richSprite, sprite);
                 }
