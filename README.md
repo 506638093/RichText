@@ -11,3 +11,5 @@
 综上所述：
 RichText有效的解决了上面的问题。我们依赖unity的高效动态合并功能。
 RichText支持UI模式和3D模式。
+
+![Image text](https://github.com/506638093/RichText/Doc/1.png)
