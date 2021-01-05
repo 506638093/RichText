@@ -511,7 +511,6 @@ namespace UnityEngine.UI
                     m_tempVerts[tempVertsIndex].position.x += roundingOffset.x;
                     m_tempVerts[tempVertsIndex].position.y += roundingOffset.y;
                     m_tempVerts[tempVertsIndex].uv1 = new Vector2(1.0f, 0);
-                    m_tempVerts[tempVertsIndex].color = this.color;
 
                     if (tempVertsIndex == 3)
                     {
@@ -527,7 +526,6 @@ namespace UnityEngine.UI
                     m_tempVerts[tempVertsIndex] = verts[i];
                     m_tempVerts[tempVertsIndex].position *= unitsPerPixel;
                     m_tempVerts[tempVertsIndex].uv1 = new Vector2(1.0f, 0);
-                    m_tempVerts[tempVertsIndex].color = this.color;
 
                     if (tempVertsIndex == 3)
                     {
