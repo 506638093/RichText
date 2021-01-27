@@ -81,7 +81,16 @@ namespace UnityEngine.UI
         [System.NonSerialized]
         private MeshFilter m_meshFilter;
         [System.NonSerialized]
-        private Mesh m_mesh;        
+        private Mesh m_mesh;
+
+        [System.NonSerialized]
+        private Vector3 m_lastPosition;
+
+        [System.NonSerialized]
+        private Quaternion m_lastRotation;
+
+        [System.NonSerialized]
+        private Vector3 m_lastScale;
 
         private string m_parseText;
         private readonly UIVertex[] m_tempVerts = new UIVertex[4];
@@ -223,7 +232,24 @@ namespace UnityEngine.UI
             if (rectTransform.hasChanged)
             {
                 rectTransform.hasChanged = false;
-                SetVerticesDirty();
+
+                if (m_UiMode == ERichTextMode.ERTM_MergeText)
+                {
+                    var lastPosition = transform.localPosition;
+                    var lastRotation = transform.localRotation;
+                    var lastScale = transform.localScale;
+                    if (m_lastPosition != lastPosition || m_lastRotation != lastRotation || m_lastScale != lastScale)
+                    {
+                        m_lastPosition = lastPosition;
+                        m_lastRotation = lastRotation;
+                        m_lastScale = lastScale;
+                        SetVerticesDirty();
+                    }
+                }
+                else
+                {
+                    SetVerticesDirty();
+                }
             }
         }
 

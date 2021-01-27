@@ -27,7 +27,14 @@ namespace UnityEngine.UI
         [System.NonSerialized]
         private Mesh m_mesh;
 
-        private bool mNativeSize;
+        [System.NonSerialized]
+        private Vector3 m_lastPosition;
+
+        [System.NonSerialized]
+        private Quaternion m_lastRotation;
+
+        [System.NonSerialized]
+        private Vector3 m_lastScale;
 
         public Mesh Mesh()
         {
@@ -232,21 +239,23 @@ namespace UnityEngine.UI
             if (rectTransform.hasChanged)
             {
                 rectTransform.hasChanged = false;
-                SetVerticesDirty();
-            }
-        }
 
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-
-            if (m_UiMode == ERichTextMode.ERTM_MergeText)
-            {
-                var render = transform.GetComponentInParent<RichTextRender>();
-                if (render)
+                if (m_UiMode == ERichTextMode.ERTM_MergeText)
                 {
-                    render.MarkDirty();
+                    var lastPosition = transform.localPosition;
+                    var lastRotation = transform.localRotation;
+                    var lastScale = transform.localScale;
+                    if (m_lastPosition != lastPosition || m_lastRotation != lastRotation || m_lastScale != lastScale)
+                    {
+                        m_lastPosition = lastPosition;
+                        m_lastRotation = lastRotation;
+                        m_lastScale = lastScale;
+                        SetVerticesDirty();
+                    }
+                }
+                else
+                {
+                    SetVerticesDirty();
                 }
             }
         }
