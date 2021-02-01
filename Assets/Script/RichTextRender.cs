@@ -48,6 +48,10 @@ namespace UnityEngine.UI
             var meshCount = texts.Length + images.Length;
             if (meshCount == 0)
             {
+				if (m_mesh)
+                {
+                    m_mesh.Clear();
+                }
                 if (m_meshRender)
                 {
                     m_meshRender.enabled = false;
