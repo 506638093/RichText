@@ -1,0 +1,10 @@
+/.vs
+/Library
+/Logs
+/obj
+/Packages
+/Temp
+/RichText.sln
+/Assembly-CSharp.csproj
+/Assembly-CSharp-Editor.csproj
+ProjectSettings/UPRSettings.asset
