@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿/***
+*              HuaHua
+*              2020-09-25
+*              富文本，一个drawcall 支持文字和图片混排
+**/
+using System.Collections.Generic;
 
 namespace HuaHua
 {

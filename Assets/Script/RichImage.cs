@@ -4,11 +4,6 @@
  *              富文本，一个drawcall 支持文字和图片混排
  **/
 
-using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using UnityEngine;
-using UnityEngine.U2D;
 using HuaHua;
 
 namespace UnityEngine.UI
