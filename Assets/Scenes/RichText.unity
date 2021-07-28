@@ -7677,8 +7677,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300248, guid: 0192151b80666114d8a79352c9ecd13a, type: 3}
-  m_Type: 1
+  m_Sprite: {fileID: 21300292, guid: 0192151b80666114d8a79352c9ecd13a, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -8891,7 +8891,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u6211\u662F\u82B1\u82B1"
+  m_Text: "<b><color=#ff0000ff>\u6211\u662F\u82B1\u82B1</color></b>"
   m_AtlasTexture: {fileID: 0}
   m_AtlasTexturePath: 
   m_UiMode: 2
@@ -21469,7 +21469,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 18.490002, y: 36.4}
-  m_SizeDelta: {x: 136.97, y: 27.2}
+  m_SizeDelta: {x: 136.97, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1146643912
 MonoBehaviour:
@@ -21502,7 +21502,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 2222
+  m_Text: <size=30>2222</size>
   m_AtlasTexture: {fileID: 0}
   m_AtlasTexturePath: 
   m_UiMode: 2
